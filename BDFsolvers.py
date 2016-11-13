@@ -25,7 +25,7 @@ def getGradient(function):
        return evaluateGradient(function,x)         
     return grad
     
-def evaluateGradient(function,x,epsilon = 1e-2):
+def evaluateGradient(function,x,epsilon = 1e-5):
     """Evaluates the gradient of function in point x using finite difference 
         approximation.
         
@@ -56,7 +56,7 @@ class BDF(Explicit_ODE):
     """
     tol = 1.e-8
     maxit = 100
-    maxsteps = 5000
+    maxsteps = 25000000
     
     def __init__(self, problem):
         Explicit_ODE.__init__(self, problem) #Calls the base class
@@ -261,6 +261,102 @@ class BDF_3(BDF):
         self.log_message(' Corrector type    : Newton iteration\n',verbose)
 
 
+class BDF_4(BDF):
+    """
+    Subclass to BDF
+    """
+    def integrate(self, t, y, tf, opts):
+        """
+        _integrates (t,y) values until t > tf
+        """
+        h = self.options["h"]
+        h = min(h, abs(tf-t))
+        
+        #Lists for storing the result
+        tres = []
+        yres = []
+        
+        for i in range(self.maxsteps):
+            if t >= tf:
+                break
+            self.statistics["nsteps"] += 1
+            
+            if i==0:  # initial steps
+                t_np1,y_np1 = self.step_EE(t,y, h)
+            elif i==1:
+                t_np1,y_np1 = self.step_EE(t,y, h)
+                t_nm2 = t_nm1
+                y_nm2 = y_nm1
+            elif i==2:
+                t_np1,y_np1 = self.step_EE(t,y, h)
+                t_nm3 = t_nm2
+                y_nm3 = y_nm2
+                t_nm2 = t_nm1
+                y_nm2 = y_nm1
+            else:   
+                t_np1, y_np1 = self.step_BDF4([t,t_nm1,t_nm2,t_nm3], [y,y_nm1,y_nm2,y_nm3], h)
+                t_nm3 = t_nm2
+                y_nm3 = y_nm2
+                t_nm2 = t_nm1
+                y_nm2 = y_nm1
+            t,t_nm1=t_np1,t
+            y,y_nm1=y_np1,y
+            
+            tres.append(t)
+            yres.append(y.copy())
+        
+            h=min(self.h,np.abs(tf-t))
+        else:
+            raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
+        
+        return ID_PY_OK, tres, yres
+
+
+    def step_BDF4(self,T,Y, h):
+        """
+        BDF-4 with Fixed Point Iteration and Zero order predictor
+        
+        alpha_0*y_np1+alpha_1*y_n+alpha_2*y_nm1+alpha_3*y_nm2=h f(t_np1,y_np1)
+        alpha=[25./12., -4., 3., -4/3., 1/4]
+        """
+        alpha=[25./12., -4., 3., -4./3., 1./4.]
+        f=self.problem.rhs
+        
+        t_n,t_nm1,t_nm2,t_nm3=T
+        y_n,y_nm1,y_nm2,y_nm3=Y
+        # predictor
+        t_np1=t_n+h
+        y_np1_i=y_n   # zero order predictor
+        
+        def Gfunc():
+            def G(y):
+                return alpha[0]*y+alpha[1]*y_n+alpha[2]*y_nm1+alpha[3]*y_nm2+alpha[4]*y_nm3-h*f(t_np1,y)
+            return G
+        
+        G=Gfunc()    
+        Gprime=getGradient(G)
+       
+        for i in range(self.maxit):
+            self.statistics["nfcns"] += 1
+            
+            Dx=solve(Gprime(y_np1_i),-G(y_np1_i))
+            y_np1_ip1=Dx+y_np1_i
+            
+#            y_np1_ip1=(-(alpha[1]*y_n+alpha[2]*y_nm1+alpha[3]*y_nm2+alpha[4]*y_nm3)+h*f(t_np1,y_np1_i))/alpha[0]
+#            y_np1_ip1=(-(alpha[1]*y_n+alpha[2]*y_nm1+alpha[3]*y_nm2)+h*f(t_np1,y_np1_i))/alpha[0]
+            if SL.norm(y_np1_ip1-y_np1_i) < self.tol:
+                return t_np1,y_np1_ip1
+            y_np1_i=y_np1_ip1
+        else:
+            raise Explicit_ODE_Exception('Corrector could not converge within % iterations'%i)
+
+
+    def print_specifics(self, verbose=NORMAL):
+        self.log_message('\nSolver options:\n',verbose)
+        self.log_message(' Solver            : BDF4',verbose)
+        self.log_message(' Solver type       : Fixed step',verbose)
+        self.log_message(' Corrector type    : Newton iteration\n',verbose)
+
 
       
 
@@ -281,7 +377,7 @@ pend_mod=Explicit_Problem(spring_pend, y0)
 pend_mod.name='Spring Pendulum'
         
 #Define an explicit solver
-exp_sim = BDF_3(pend_mod) #Create a BDF solver
+exp_sim = BDF_4(pend_mod) #Create a BDF solver
 #exp_sim = CVode(pend_mod)
 t, y = exp_sim.simulate(10)
 exp_sim.plot()

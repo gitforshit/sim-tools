@@ -56,7 +56,7 @@ class BDF(Explicit_ODE):
     """
     tol = 1.e-8
     maxit = 100
-    maxsteps = 25000000
+    maxsteps = 20000
     
     def __init__(self, problem):
         Explicit_ODE.__init__(self, problem) #Calls the base class
@@ -104,7 +104,44 @@ class BDF(Explicit_ODE):
         """
         return
   
-
+class EXP_EUL(BDF):
+    """
+    Subclass to BDF
+    """
+    def integrate(self, t, y, tf, opts):
+        """
+        _integrates (t,y) values until t > tf
+        """
+        h = self.options["h"]
+        h = min(h, abs(tf-t))
+        
+        #Lists for storing the result
+        tres = []
+        yres = []
+        
+        for i in range(self.maxsteps):
+            if t >= tf:
+                break
+            self.statistics["nsteps"] += 1
+            
+            t_np1,y_np1 = self.step_EE(t,y, h)
+            t=t_np1
+            y=y_np1
+            
+            tres.append(t)
+            yres.append(y.copy())
+        
+            h=min(self.h,np.abs(tf-t))
+        else:
+            raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
+        
+        return ID_PY_OK, tres, yres
+        
+    def print_specifics(self, verbose=NORMAL):
+        self.log_message('\nSolver options:\n',verbose)
+        self.log_message(' Solver            : Explicit Euler',verbose)
+        self.log_message(' Solver type       : Fixed step',verbose)
+        self.log_message(' Corrector type    : None\n',verbose)
 
 class BDF_2(BDF):
     """
@@ -369,16 +406,24 @@ def spring_pend(t,y):
     return ydot
         
 def lambda_fkt(y1, y2):
-    k = 100
+    k = 15
     return k * (np.sqrt(y1**2 + y2**2) - 1) / np.sqrt(y1**2 + y2**2)
         
-y0 = np.array([1., 0., 0., 0.])
+y0 = np.array([1.05, 0., 0., 0.])
 pend_mod=Explicit_Problem(spring_pend, y0)
 pend_mod.name='Spring Pendulum'
-        
+  
+atol = 1.0e-8
+rtol = 1.0e-6
+maxord = 1
+
 #Define an explicit solver
-exp_sim = BDF_4(pend_mod) #Create a BDF solver
-#exp_sim = CVode(pend_mod)
+#exp_sim = BDF_4(pend_mod) #Create a BDF solver
+#exp_sim = EXP_EUL(pend_mod)
+exp_sim = CVode(pend_mod)
+exp_sim.atol = atol
+exp_sim.rtol = rtol
+exp_sim.maxord = maxord
 t, y = exp_sim.simulate(10)
 exp_sim.plot()
 mpl.show()

@@ -66,6 +66,8 @@ class BDF(Explicit_ODE):
         #Statistics
         self.statistics["nsteps"] = 0
         self.statistics["nfcns"] = 0
+        
+        self.error = []
     
     def _set_h(self,h):
             self.options["h"] = float(h)
@@ -118,6 +120,7 @@ class BDF_2(BDF):
         #Lists for storing the result
         tres = []
         yres = []
+        reduced = False
         
         for i in range(self.maxsteps):
             if t >= tf:
@@ -126,16 +129,26 @@ class BDF_2(BDF):
             
             if i==0:  # initial steps
                 t_np1,y_np1 = self.step_EE(t,y, h)
+                t_nm1,y_nm1 = t,y
             else:   
-                t_np1, y_np1 = self.step_BDF2([t,t_nm1], [y,y_nm1], h)
-                
-                if isnan(t_np1) and isnan(y_np1):
+                try:
+                    t_np1, y_np1 = self.step_BDF2([t,t_nm1,t_nm2], [y,y_nm1,y_nm2], h)
+                except (Explicit_ODE_Exception, LinAlgError) as E:
                     self._set_h(h/2)
                     _, tred, yred = self.integrate(t, y, tf, opts)
-                    reduced = True                
+                    reduced = True
+                        
+                    
+#                t_np1, y_np1 = self.step_BDF2([t,t_nm1,t_nm2], [y,y_nm1,y_nm2], h)
+#                
+#                if isnan(t_np1) and isnan(y_np1):
+#                    self._set_h(h/2)
+#                    _, tred, yred = self.integrate(t, y, tf, opts)
+#                    reduced = True                
                 
-            t,t_nm1=t_np1,t
-            y,y_nm1=y_np1,y
+                
+            t,t_nm1,t_nm2=t_np1,t,t_nm1
+            y,y_nm1,y_nm2=y_np1,y,y_nm1
             
             if reduced:
                 tres = tres + tred
@@ -162,11 +175,13 @@ class BDF_2(BDF):
         alpha=[3./2.,-2.,1./2]
         f=self.problem.rhs
         
-        t_n,t_nm1=T
-        y_n,y_nm1=Y
+        t_n,t_nm1,t_nm2=T
+        y_n,y_nm1,y_nm2=Y
         # predictor
+        coeff = np.polyfit(T, Y, 2)        
         t_np1=t_n+h
-        y_np1_i=y_n   # zero order predictor
+        y_np1_i = np.polyval(coeff, t_np1)
+        #y_np1_i=y_n   # zero order predictor
         
         def Gfunc():
             def G(y):
@@ -183,13 +198,15 @@ class BDF_2(BDF):
             y_np1_ip1=Dx+y_np1_i            
             
 #            y_np1_ip1=(-(alpha[1]*y_n+alpha[2]*y_nm1)+h*f(t_np1,y_np1_i))/alpha[0]
-            if SL.norm(y_np1_ip1-y_np1_i) < self.tol:
+            normY = SL.norm(y_np1_ip1-y_np1_i)
+            if normY < self.tol:
+                self.error.append(normY)
                 return t_np1,y_np1_ip1
             y_np1_i=y_np1_ip1
         else:
-#            raise Explicit_ODE_Exception('Corrector could not converge within % iterations'%i)
-            print('Colud not converge within %d iterations' %i)
-            return nan,nan
+            raise Explicit_ODE_Exception('Corrector could not converge within % iterations'%i)
+            #print('Colud not converge within %d iterations' %i)
+            #return nan,nan
 
     def print_statistics(self, verbose=NORMAL):
         self.log_message('Final Run Statistics            : {name} \n'.format(name=self.problem.name),        verbose)

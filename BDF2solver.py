@@ -68,6 +68,7 @@ class BDF(Explicit_ODE):
         self.statistics["nfcns"] = 0
         
         self.error = []
+        self.hrdct = 0
     
     def _set_h(self,h):
             self.options["h"] = float(h)
@@ -135,6 +136,7 @@ class BDF_2(BDF):
                     t_np1, y_np1 = self.step_BDF2([t,t_nm1,t_nm2], [y,y_nm1,y_nm2], h)
                 except (Explicit_ODE_Exception, LinAlgError) as E:
                     self._set_h(h/2)
+                    self.hrdct += 1
                     _, tred, yred = self.integrate(t, y, tf, opts)
                     reduced = True
                         
@@ -211,6 +213,7 @@ class BDF_2(BDF):
     def print_statistics(self, verbose=NORMAL):
         self.log_message('Final Run Statistics            : {name} \n'.format(name=self.problem.name),        verbose)
         self.log_message(' Step-length                    : {stepsize} '.format(stepsize=self.options["h"]), verbose)
+        self.log_message(' Number of step reductions      : {reduction} '.format(reduction=self.hrdct), verbose)
         self.log_message(' Number of Steps                : '+str(self.statistics["nsteps"]),          verbose)               
         self.log_message(' Number of Function Evaluations : '+str(self.statistics["nfcns"]),         verbose)
 

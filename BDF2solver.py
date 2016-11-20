@@ -134,7 +134,7 @@ class BDF_2(BDF):
             else:   
                 try:
                     t_np1, y_np1 = self.step_BDF2([t,t_nm1,t_nm2], [y,y_nm1,y_nm2], h)
-                except (Explicit_ODE_Exception, LinAlgError) as E:
+                except (Explicit_ODE_Exception, SL.LinAlgError) as E:
                     self._set_h(h/2)
                     self.hrdct += 1
                     _, tred, yred = self.integrate(t, y, tf, opts)
@@ -163,6 +163,7 @@ class BDF_2(BDF):
         
             h=min(self.h,np.abs(tf-t))
         else:
+#            print(t)
             raise Explicit_ODE_Exception('Final time not reached within maximum number of steps')
         
         return ID_PY_OK, tres, yres
@@ -224,26 +225,26 @@ class BDF_2(BDF):
 
 
 
-def spring_pend(t,y):
-    ydot = np.zeros(4)
-    ydot[0] = y[2]
-    ydot[1] = y[3]
-    ydot[2] = -y[0] * lambda_fkt(y[0], y[1])
-    ydot[3] = -y[1] * lambda_fkt(y[0], y[1]) - 1
-    return ydot
-        
-def lambda_fkt(y1, y2):
-    k = 200
-    return k * (np.sqrt(y1**2 + y2**2) - 1) / np.sqrt(y1**2 + y2**2)
-        
-y0 = np.array([1.05, 0., 0., 0.])
-pend_mod=Explicit_Problem(spring_pend, y0)
-pend_mod.name='Spring Pendulum'
-  
-
-#Define an explicit solver
-exp_sim = BDF_2(pend_mod) #Create a BDF solver
-
-t, y = exp_sim.simulate(10)
-exp_sim.plot()
-mpl.show()
+#def spring_pend(t,y):
+#    ydot = np.zeros(4)
+#    ydot[0] = y[2]
+#    ydot[1] = y[3]
+#    ydot[2] = -y[0] * lambda_fkt(y[0], y[1])
+#    ydot[3] = -y[1] * lambda_fkt(y[0], y[1]) - 1
+#    return ydot
+#        
+#def lambda_fkt(y1, y2):
+#    k = 200
+#    return k * (np.sqrt(y1**2 + y2**2) - 1) / np.sqrt(y1**2 + y2**2)
+#        
+#y0 = np.array([1.05, 0., 0., 0.])
+#pend_mod=Explicit_Problem(spring_pend, y0)
+#pend_mod.name='Spring Pendulum'
+#  
+#
+##Define an explicit solver
+#exp_sim = BDF_2(pend_mod) #Create a BDF solver
+#
+#t, y = exp_sim.simulate(10)
+#exp_sim.plot()
+#mpl.show()

@@ -136,7 +136,7 @@ class BDF_4(BDF):
             elif i==1:
                 try:
                     t_np1, y_np1 = self.step_BDF2([t,t_nm1,t_nm2], [y,y_nm1,y_nm2], h)
-                except (Explicit_ODE_Exception, LinAlgError) as E:
+                except (Explicit_ODE_Exception, SL.LinAlgError) as E:
                     self._set_h(h/2)
                     self.hrdct += 1
                     _, tred, yred = self.integrate(t, y, tf, opts)
@@ -152,7 +152,7 @@ class BDF_4(BDF):
             else:   
                 try:
                     t_np1, y_np1 = self.step_BDF4([t,t_nm1,t_nm2,t_nm3,t_nm4], [y,y_nm1,y_nm2,y_nm3,y_nm4], h)
-                except (Explicit_ODE_Exception, LinAlgError) as E:
+                except (Explicit_ODE_Exception, SL.LinAlgError) as E:
                     self._set_h(h/2)
                     self.hrdct += 1
                     _, tred, yred = self.integrate(t, y, tf, opts)
@@ -201,7 +201,6 @@ class BDF_4(BDF):
         y_n,y_nm1,y_nm2=Y
         # predictor
         coeff = np.polyfit(T, Y, 2)
-        print(2)
         t_np1=t_n+h
         y_np1_i = np.polyval(coeff, t_np1)
         #y_np1_i=y_n   # zero order predictor
@@ -245,7 +244,6 @@ class BDF_4(BDF):
         y_n,y_nm1,y_nm2,y_nm3=Y
         # predictor
         coeff = np.polyfit(T, Y, 3)   
-        print(3)
         t_np1=t_n+h
         y_np1_i = np.polyval(coeff, t_np1)
         #y_np1_i=y_n   # zero order predictor
@@ -289,7 +287,6 @@ class BDF_4(BDF):
         y_n,y_nm1,y_nm2,y_nm3,y_nm4=Y
         # predictor
         coeff = np.polyfit(T, Y, 4) 
-        print(4)
         t_np1=t_n+h
         y_np1_i = np.polyval(coeff, t_np1)
         #y_np1_i=y_n   # zero order predictor
@@ -333,26 +330,26 @@ class BDF_4(BDF):
 
 
 
-def spring_pend(t,y):
-    ydot = np.zeros(4)
-    ydot[0] = y[2]
-    ydot[1] = y[3]
-    ydot[2] = -y[0] * lambda_fkt(y[0], y[1])
-    ydot[3] = -y[1] * lambda_fkt(y[0], y[1]) - 1
-    return ydot
-        
-def lambda_fkt(y1, y2):
-    k = 500
-    return k * (np.sqrt(y1**2 + y2**2) - 1) / np.sqrt(y1**2 + y2**2)
-        
-y0 = np.array([1.05, 0., 0., 0.])
-pend_mod=Explicit_Problem(spring_pend, y0)
-pend_mod.name='Spring Pendulum'
-  
-
-#Define an explicit solver
-exp_sim = BDF_4(pend_mod) #Create a BDF solver
-
-t, y = exp_sim.simulate(10)
-exp_sim.plot()
-mpl.show()
+#def spring_pend(t,y):
+#    ydot = np.zeros(4)
+#    ydot[0] = y[2]
+#    ydot[1] = y[3]
+#    ydot[2] = -y[0] * lambda_fkt(y[0], y[1])
+#    ydot[3] = -y[1] * lambda_fkt(y[0], y[1]) - 1
+#    return ydot
+#        
+#def lambda_fkt(y1, y2):
+#    k = 500
+#    return k * (np.sqrt(y1**2 + y2**2) - 1) / np.sqrt(y1**2 + y2**2)
+#        
+#y0 = np.array([1.05, 0., 0., 0.])
+#pend_mod=Explicit_Problem(spring_pend, y0)
+#pend_mod.name='Spring Pendulum'
+#  
+#
+##Define an explicit solver
+#exp_sim = BDF_4(pend_mod) #Create a BDF solver
+#
+#t, y = exp_sim.simulate(10)
+#exp_sim.plot()
+#mpl.show()

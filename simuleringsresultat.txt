@@ -1,0 +1,67 @@
+tol = 1.e-8 på allt utom EE som ej har tol implementerat
+simulation över 100 s, k=15
+CVode
+Number of steps                                 : 5467
+ Number of function evaluations                  : 5726
+ Number of Jacobian evaluations                  : 92
+ Number of function eval. due to Jacobian eval.  : 368
+ Number of error test failures                   : 2
+ Number of nonlinear iterations                  : 5722
+ Number of nonlinear convergence failures        : 0
+
+Solver options:
+
+ Solver                   : CVode
+ Linear multistep method  : BDF
+ Nonlinear solver         : Newton
+ Linear solver type       : DENSE
+ Maximal order            : 5
+ Tolerances (absolute)    : 1e-08
+ Tolerances (relative)    : 1e-08
+
+EE
+Step-length                    : 0.01 
+ Number of step reductions      : 0 
+ Number of Steps                : 10000
+ Number of Function Evaluations : 10000
+
+Solver options:
+
+ Solver            : Explicit Euler
+ Solver type       : Fixed step
+
+BDF-2
+Step-length                    : 0.01 
+ Number of step reductions      : 0 
+ Number of Steps                : 10000
+ Number of Function Evaluations : 46916
+
+Solver options:
+
+ Solver            : BDF2
+ Solver type       : Fixed step
+ Corrector type    : Newton
+
+BDF-3
+Step-length                    : 0.01 
+ Number of step reductions      : 0 
+ Number of Steps                : 10000
+ Number of Function Evaluations : 30003
+
+Solver options:
+
+ Solver            : BDF3
+ Solver type       : Fixed step
+ Corrector type    : Newton
+
+BDF-4
+Step-length                    : 0.01 
+ Number of step reductions      : 0 
+ Number of Steps                : 10000
+ Number of Function Evaluations : 27201
+
+Solver options:
+
+ Solver            : BDF4
+ Solver type       : Fixed step
+ Corrector type    : Newton

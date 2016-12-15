@@ -29,6 +29,13 @@ peck = 0
 
 
 def woodpecker(t,y,yp,sw):
+    """
+    input vectors of the form:
+    y = [z, phiS, phiB, zp, phiSp, phiBp, lambda1, lambda2]
+        [0,    1,    2,  3,      4,    5,       6,       7]
+    yp = [zp, phiSp, phiBp, zpp, phiSpp, phiBpp, lambda1p, lambda2p]
+         [ 0,     1,     2,   3,      4,      5,        6,        7]
+    """    
     if sw[0]:
         res = np.zeros(np.size(y))
         res[0] = (mS +  mB) * yp[3] +  mB * lS * yp[4] + mB * lG * yp[5] + (mS + mB) * g

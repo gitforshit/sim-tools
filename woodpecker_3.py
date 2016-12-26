@@ -11,19 +11,20 @@ from assimulo.problem import Implicit_Problem
 from assimulo.solvers import IDA
 import matplotlib.pyplot as pl
 
-mS = 3.0e-4
-JS = 5.0e-9
-mB = 4.5e-3
-JB = 7.0e-7
-r0 = 2.5e-3
-rS = 3.1e-3
-hS = 2.0e-2
-lS = 1.0e-2
-lG = 1.5e-2
-lB = 2.01e-2
-hB = 2.0e-2
-cp = 5.6e-3
-g = 9.81
+mS = 3.0e-4 # Mass of sleeve [kg]
+JS = 5.0e-9 # Moment of inertia of the sleeve [kgm]
+mB = 4.5e-3 # Mass of bird [kg]
+masstotal=mS+mB # total mass
+JB = 7.0e-7 # Moment of inertia of bird [kgm]
+r0 = 2.5e-3 # Radius of the bar [m]
+rS = 3.1e-3 # Inner Radius of sleeve [m]
+hS = 5.8e-3 # 1/2 height of sleeve [m]
+lS = 1.0e-2 # verical distance sleeve origin to spring origin [m]
+lG = 1.5e-2 # vertical distance spring origin to bird origin [m]
+hB = 2.0e-2 # y coordinate beak (in bird coordinate system) [m]
+lB = 2.01e-2 # -x coordinate beak (in bird coordinate system) [m]
+cp = 5.6e-3 # rotational spring constant [N/rad]
+g  = 9.81 #  [m/s^2]
 global peck
 peck = 0
 
@@ -108,24 +109,29 @@ def handle_event(solver, event_info):
   
     # State I to II
     if (solver.sw[0] and phiBp < 0 and state_info[0]):
+        print('State I')
         locked_sleeve(solver)
         solver.sw=[0,1,0,0]
     
     # State I to III
     elif (solver.sw[0] and phiBp > 0 and state_info[1]): 
+        print('State I')
         locked_sleeve(solver)
         solver.sw=[0,0,1,0]
             
     # State II to I
     elif (solver.sw[1] and state_info[0]):
+        print('State II')
         solver.sw=[1,0,0,0]
     
     # State III to I
     elif (solver.sw[2] and phiBp < 0 and state_info[0]):
+        print('State III')
         solver.sw=[1,0,0,0]
             
     # State III to IV and back to III
     elif (solver.sw[2] and phiBp > 0 and state_info[1]):
+        print('State IV')
         solver.y[5] = -solver.y[5]
         solver.yd[2] = -solver.yd[2]
 
@@ -141,7 +147,7 @@ def locked_sleeve(solver):
     y = solver.y
     yp = solver.yd
     
-    phiBp = (mB * lG * yp[0] + (mB * lS * lG) * yp[1] + (JB + mB * lG * lG) * yp[2]) / (JB + mB * lG * lG)
+    phiBp = ((mB * lG) * yp[0] + (mB * lS * lG) * yp[1] + (JB + mB * lG * lG) * yp[2]) / (JB + mB * lG * lG)
     
     y[3] = 0
     y[4] = 0    
@@ -159,9 +165,9 @@ def locked_sleeve(solver):
 t0 = 0;
 startsw = [1,0,0,0]
 
-a = -0.85
-y0 = np.array([1, 0,0, -0, a, a, 0,0])
-yd0 =  np.array([-0, a, a,-g, 0, 0, 0, 0])
+a = 1.5
+y0 = np.array([5.0, 0.0, 0.0, 0.0, a, 2*a, 0.0, 0.0])
+yd0 =  np.array([0.0, a, 2*a, -g, 0.0, 0.0, 0.0, 0.0])
 
 problem = Implicit_Problem(woodpecker, y0, yd0, t0, sw0=startsw)
 
@@ -180,7 +186,7 @@ sim.atol[[6, 7]] = 1e10
 
 ncp = 400
 
-tfinal = 2
+tfinal = 2.0
 t, y, yd = sim.simulate(tfinal, ncp)
 
 #sim.plot()
